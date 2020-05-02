@@ -1,0 +1,33 @@
+DROP DATABASE delilah;
+CREATE DATABASE delilah;
+CREATE TABLE delilah.usuarios (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_usuario VARCHAR(60) NOT NULL,
+    password VARCHAR(60) NOT NULL,
+    nombre VARCHAR(60) NOT NULL,
+    apellido VARCHAR(60),
+    mail VARCHAR(60) NOT NULL,
+    telefono VARCHAR(60) NOT NULL,
+    admin INT NOT NULL
+    );
+CREATE TABLE delilah.pedidos (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    estado VARCHAR(60) NOT NULL DEFAULT "Nuevo",
+    usuario_id INT NOT NULL,
+    direccion VARCHAR(60) NOT NULL,
+    total INT,
+    metodo_pago VARCHAR(60) NOT NULL,
+    hora DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+CREATE TABLE delilah.productos (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(60) NOT NULL,
+    precio INT NOT NULL
+);
+CREATE TABLE delilah.pedidos_productos (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    pedido_id INT NOT NULL,
+    producto_id INT NOT NULL,
+    cantidad INT NOT NULL
+    );
+INSERT INTO delilah.usuarios (nombre_usuario, password, nombre, apellido, mail, telefono, admin) VALUES ("delilahAdmin", "sha1$d605fa50$1$b19fc98aa6ca3160e319213c8ad3e2d1bd744e56", "Administrador", "Delilah", "admin@delilah.com", "27388378", 1)

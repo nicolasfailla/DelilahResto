@@ -1,0 +1,461 @@
+openapi: 3.0.0
+servers: [{"url":"localhost:3000/"}]
+info:
+  description: API of Delilah Resto, 3rd project of Full-Stack Web Develompent Course.
+  version: "1.0.0"
+  title: 'DelilahResto'
+  contact:
+    email: nicolasfailla1991@gmail.com
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+tags:
+  - name: Administrator
+    description: Functions only for administrator
+  - name: Registered Users
+    description: Functions for registered users
+  - name: Free endpoints
+    description: Endpoints with free acces
+paths:
+  /users:
+    get:
+      tags:
+        - Administrator
+      summary: Acces to all registered users
+      description: Shows a list of all registered users
+      parameters:
+        - in: header
+          name: Authorization
+          description: Token given in login from administator account. 
+          required: true
+          schema:
+            type: string
+            example: "eyJ1c3VhcmlvX3Rva2VuIjp.IUzI1NiIsInR5cCI6IkpXVCJ9"
+      responses:
+        '200':
+          description: list of registered users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          description: Please sign in first
+        '403':
+          description: Acces denied, only for Admin
+    post:
+      tags:
+        - Free endpoints
+      summary: Creates a new user
+      description: If required fields are correctly filled and the username is available, a new user will be created.
+      responses:
+        '201':
+          description: User succesfully created
+        '400':
+          description: Error
+          content: 
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/UserNotAvailable'
+                  - $ref: '#/components/schemas/FieldsRequired'
+                example: There are required fields empty
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostUser'
+        description: Datos del usuario a crear
+  /login:
+    post: 
+      tags:
+        - Endpoints Libres
+      summary: Autentica usuarios 
+      description: Dado un nombre de usuario y una contraseña, corrobora los datos con la base de datos. De existir el usuario y estar bien los datos, devuelve el token necesario para futuras autenticaciones.
+      responses:
+        '400':
+          description: Error
+          content: 
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/NoUsuario'
+                  - $ref: '#/components/schemas/NoContrasena'
+                  - $ref: '#/components/schemas/NoAutentica'
+                example: "Usuario Inexistente"
+        '200':
+          description: Token para futuras autenticaciones
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: "IUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvX3Rva2VuIjp7Im"
+      requestBody:
+        content:
+          application/json: 
+            schema:
+              $ref: '#/components/schemas/UsuarioLogin'
+        description: Nombre de usuario y contraseña
+  /productos:
+    post:
+      
+      tags:
+        - Administrador
+      summary: Crea un nuevo producto
+      description: Dado un nombre de producto y un precio, lo agrega a la lista de productos disponibles.
+      parameters:
+          - in: header
+            name: Authorization
+            description: Token obtenido al realizar el login desde la cuenta de administrador. 
+            required: true
+            schema:
+              type: string
+              example: "IUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvX3Rva2VuIjp"
+      
+      responses:
+        '400':
+          description: Primero debes iniciar sesión
+        '403':
+          description: Acceso denegado. Sólo administradores
+        '200':
+          description: Se ha agregado el nuevo producto a la base de datos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Producto'
+        description: Nombre y precio del producto a agregar
+    get:
+      tags:
+        - Usuarios Registrados
+        - Administrador
+      summary: Accede a los productos disponibles
+      description: Trae una lista con todos los productos disponibles
+      parameters:
+        - in: header
+          name: Authorization
+          description: Token obtenido al realizar el login.
+          required: true
+          schema:
+            type: string
+            example: 5cCI6IkpXVCJ9.eyJ1c3VhcmlvX3Rva2Vu
+      responses:
+        '200':
+          description: lista de productos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Producto'
+        '401':
+          description: Primero debes iniciar sesión
+        '403':
+          description: Token inválido
+  /productos/{id}:
+    delete:
+      tags:
+        - Administrador
+      summary: Elimina un producto
+      description: Dado el id de un producto, lo elimina de la base de datos.
+      parameters:
+        - name: id
+          in: path
+          description: ID del producto a eliminar
+          required: true
+          schema: 
+            type: integer
+            example: 1
+        - in: header
+          name: Authorization
+          description: Token obtenido al realizar el login desde la cuenta de administrador. 
+          required: true
+          schema:
+            type: string
+            example: "IUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvX3Rva2VuIjp"
+      responses:
+        '200':
+          description: Se ha eliminado el producto
+        '400':
+          description: Primero debes iniciar sesión
+        '403':
+          description: Acceso denegado. Sólo administradores
+    patch:
+      tags:
+        - Administrador
+      summary: Edita un producto existente.
+      description: Dado el id de un producto, un nuevo nombre y/o precio, se actualiza el registro en la base de datos. 
+      parameters:
+        - name: id
+          in: path
+          description: ID del producto a editar
+          required: true
+          schema: 
+            type: integer
+            example: 1
+        - in: header
+          name: Authorization
+          description: Token obtenido al realizar el login desde la cuenta de administrador. 
+          required: true
+          schema:
+            type: string
+            example: "IUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvX3Rva2VuIjp"
+      responses:
+        '200':
+            description: OK
+            content: 
+              application/json:
+                schema:
+                  oneOf:
+                    - $ref: '#/components/schemas/CambiosOK'
+                    - $ref: '#/components/schemas/NuevoNombre'
+                    - $ref: '#/components/schemas/NuevoPrecio'
+                example: Se realizaron los cambios
+        '400':
+            description: Primero debes iniciar sesión
+        '403':
+            description: Acceso denegado. Sólo administradores
+      requestBody: 
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarProducto'
+        description: Nuevo nombre y/o nuevo precio del producto
+  /pedidos:
+    post:
+      tags:
+      - Usuarios Registrados
+      summary: Crea un nuevo pedido
+      description: Dados los datos requeridos, realiza un nuevo pedido. 
+      responses:
+        '401':
+          description: Primero debes iniciar sesión
+        '403':
+          description: Token inválido
+        '200':
+          description: El pedido fue realizado con éxito
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PedidoUsuario'
+        description: Los productos se informan en forma de lista con los ID de los productos pedidos por el usuario, acompañado de un array de las cantidades de los mismos. Las posiciones deben corresponderse. Es necesario además aclarar la dirección de entrega y el método de pago.
+    get:
+      tags:
+        - Administrador
+      summary: Accede a todos los pedidos
+      description: Trae una lista con todos los pedidos registrados en la base de datos. Por cada pedido, devuelve tantos registros como productos diferentes posea.
+      parameters:
+        - in: header
+          name: Authorization
+          description: Token obtenido al realizar el login desde la cuenta del administrador.
+          required: true
+          schema:
+            type: string
+            example: aaSSDdFr4567
+      responses:
+        '200':
+          description: lista de pedidos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PedidoAdmin'
+        '401':
+          description: Primero debes iniciar sesión
+        '403':
+          description: Acceso denegado. Sólo administradores
+  /pedidos/{id}:
+    patch:
+      tags:
+        - Administrador
+      summary: Edita el estado de un pedido.
+      description: Dado el id de un pedido y un nuevo estado, se actualiza el registro en la base de datos. 
+      parameters:
+        - name: id
+          in: path
+          description: ID del pedido a actualizar
+          required: true
+          schema: 
+            type: integer
+            example: 1
+        - in: header
+          name: Authorization
+          description: Token obtenido al realizar el login desde la cuenta del administrador.
+          required: true
+          schema:
+            type: string
+            example: aaSSDdFr4567
+      responses:
+        '200':
+            description: El estado del pedido fue modificado
+        '401':
+            description: Primero debes iniciar sesión
+        '403':
+            description: Acceso denegado. Sólo administradores
+      requestBody: 
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarPedido'
+        description: Nuevo estado del pedido
+    
+components:
+  schemas:
+    Post-Usuario:
+      type: object
+      properties:
+        nombreusuario:
+          type: string
+          example: pepep1994
+        password:
+          type: string
+          example: "contraseña234"
+        nombre:
+          type: string
+          example: Pepe
+        apellido:
+          type: string
+          example: Perez
+        email:
+          type: string
+          example: pepe@perez.com
+        telefono:
+          type: string
+          example: "911123456"
+    Usuario:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        nombre_usuario:
+          type: string
+          example: pepep1994
+        nombre:
+          type: string
+          example: Pepe
+        apellido:
+          type: string
+          example: Perez
+        mail:
+          type: string
+          example: pepe@perez.com
+        telefono:
+          type: string
+          example: "911123456"
+        admin:
+          type: integer
+          example: 0
+    UsuarioLogin:
+      type: object
+      properties:
+        nombreusuario:
+          type: string
+          example: pepep1994
+        password:
+          type: string
+          example: "contraseña234"
+    Producto:
+      type: object
+      properties:
+        nombre:
+          type: string
+          example: Hamburguesa
+        precio:
+          type: integer
+          example: 400
+    ActualizarProducto:
+      type: object
+      properties:
+        nuevo_nombre:
+          type: string
+          example: Hamburguesa Clásica
+        nuevo_precio:
+          type: integer
+          example: 450
+    PedidoUsuario:
+      type: object
+      properties:
+        productos:
+          type: array
+          items:
+            type: integer
+          example: [1,3,5]
+        cantidades:
+          type: array
+          items: 
+            type: integer
+          example: [1,1,2]
+        dirección:
+          type: string
+          example: Avenida Corrientes 235
+        metodo_pago:
+          type: string
+          example: "Efectivo"
+    PedidoAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        estado:
+          type: string
+          default: "Nuevo"
+          example: "En Preparación"
+        usuario_id:
+          type: integer
+          example: 4
+        direccion:
+          type: string
+          example: Av Corrientes 245
+        total:
+          type: integer
+          example: 2500
+        metodo_pago:
+          type: string
+          example: Débito
+        hora:
+          type: string
+          example: "2020-03-25T00:48:08.000Z"
+        nombre_producto:
+          type: string
+          example: Hamburguesa
+        cantidad:
+          type: integer
+          example: 3
+    ActualizarPedido:
+      type: object
+      properties:
+        nuevo_estado:
+          type: string
+          example: "Cancelado"
+    FaltanDatos:
+      type: string
+      example: "Hay campos obligatorios vacíos"
+    UsuarioNoDisp:
+      type: string
+      example: "El nombre de usuario no está disponible"
+    NoUsuario:  
+      type: string
+      example: "Usuario Inexistente"
+    NoContrasena:
+      type: string
+      example: "Contraseña incorrecta"
+    NoAutentica:
+      type: string
+      example: "Ha ocurrido un error autenticando"
+    CambiosOK:
+      type: string
+      example: "Se realizaron los cambios"
+    NuevoNombre:
+      type: string
+      example: "El nombre del producto ha sido actualizado"
+    NuevoPrecio:
+      type: string
+      example: "El precio del producto ha sido actualizado"

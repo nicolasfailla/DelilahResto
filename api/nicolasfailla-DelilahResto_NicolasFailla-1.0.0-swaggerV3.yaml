@@ -1,0 +1,461 @@
+openapi: 3.0.0
+servers: [{"url":"localhost:3000/"}]
+info:
+  description: API of Delilah Resto, 3rd project of Full-Stack Web Develompent Course.
+  version: "1.0.0"
+  title: 'DelilahResto'
+  contact:
+    email: nicolasfailla1991@gmail.com
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+tags:
+  - name: Administrator
+    description: Functions only for administrator
+  - name: Registered Users
+    description: Functions for registered users
+  - name: Free endpoints
+    description: Endpoints with free acces
+paths:
+  /users:
+    get:
+      tags:
+        - Administrator
+      summary: Acces to all registered users
+      description: Shows a list of all registered users
+      parameters:
+        - in: header
+          name: Authorization
+          description: Token given in login from administator account. 
+          required: true
+          schema:
+            type: string
+            example: "eyJ1c3VhcmlvX3Rva2VuIjp.IUzI1NiIsInR5cCI6IkpXVCJ9"
+      responses:
+        '200':
+          description: list of registered users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          description: Please sign in first
+        '403':
+          description: Acces denied, only for Admin
+    post:
+      tags:
+        - Free endpoints
+      summary: Creates a new user
+      description: If required fields are correctly filled and the username is available, a new user will be created.
+      responses:
+        '201':
+          description: User succesfully created
+        '400':
+          description: Error
+          content: 
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/UserNotAvailable'
+                  - $ref: '#/components/schemas/FieldsRequired'
+                example: There are required fields empty
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostUser'
+        description: User data to be created
+  /login:
+    post: 
+      tags:
+        - Free endpoints
+      summary: Users authentification 
+      description: With a user and pass, compares with database. If data is correct, generates token for authentification
+      responses:
+        '400':
+          description: Error
+          content: 
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/NoUser'
+                  - $ref: '#/components/schemas/NoPassword'
+                  - $ref: '#/components/schemas/NoAutentification'
+                example: "User non existent"
+        '200':
+          description: Token for future autentifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: "IUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvX3Rva2VuIjp7Im"
+      requestBody:
+        content:
+          application/json: 
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+        description: Username and password
+  /products:
+    post:
+      
+      tags:
+        - Administrator
+      summary: Creates a new product
+      description: With product name and price, adds new item to available products.
+      parameters:
+          - in: header
+            name: Authorization
+            description: Token given in administrator account login 
+            required: true
+            schema:
+              type: string
+              example: "IUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvX3Rva2VuIjp"
+      
+      responses:
+        '400':
+          description: Please log in first
+        '403':
+          description: Acces denied, only administrators
+        '200':
+          description: New product has been added to database
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+        description: Name and price of product to be added
+    get:
+      tags:
+        - Registered Users
+        - Administrator
+      summary: Acces to available products
+      description: Shows list with available products
+      parameters:
+        - in: header
+          name: Authorization
+          description: Given token when login was made
+          required: true
+          schema:
+            type: string
+            example: 5cCI6IkpXVCJ9.eyJ1c3VhcmlvX3Rva2Vu
+      responses:
+        '200':
+          description: products list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '401':
+          description: Log in first
+        '403':
+          description: invalid token
+  /productos/{id}:
+    delete:
+      tags:
+        - Administrator
+      summary: Deletes a product
+      description: With given ID of product, it is deleted from database
+      parameters:
+        - name: id
+          in: path
+          description: ID of product to be deleted
+          required: true
+          schema: 
+            type: integer
+            example: 1
+        - in: header
+          name: Authorization
+          description: Token given in admins login 
+          required: true
+          schema:
+            type: string
+            example: "IUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvX3Rva2VuIjp"
+      responses:
+        '200':
+          description: Product has been deleted
+        '400':
+          description: Please log in first
+        '403':
+          description: Acces denied, only for admins
+    patch:
+      tags:
+        - Administrator
+      summary: Edits an existing product.
+      description: Given an ID of a product with new price and name, it updates these new attributes. 
+      parameters:
+        - name: id
+          in: path
+          description: ID of product to be updated
+          required: true
+          schema: 
+            type: integer
+            example: 1
+        - in: header
+          name: Authorization
+          description: Given Token when making Login from Admin account. 
+          required: true
+          schema:
+            type: string
+            example: "IUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvX3Rva2VuIjp"
+      responses:
+        '200':
+            description: OK
+            content: 
+              application/json:
+                schema:
+                  oneOf:
+                    - $ref: '#/components/schemas/ChangesOK'
+                    - $ref: '#/components/schemas/NewName'
+                    - $ref: '#/components/schemas/NewPrice'
+                example: Changes have been made
+        '400':
+            description: Please Login first
+        '403':
+            description: Access denied. Only admin
+      requestBody: 
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProduct'
+        description: New name and/or new price of product
+  /pedidos:
+    post:
+      tags:
+      - Registered Users
+      summary: Creates a new order
+      description: With required data given, makes a new order. 
+      responses:
+        '401':
+          description: Please login first.
+        '403':
+          description: Invalid token
+        '200':
+          description: Order succesfully made.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderUser'
+        description:  Products are delivered  in form of list with each ID product ordered by user, with an array of quantity of each one. The positions must correspond. In addition, delivery adress and payment method must be given.
+    get:
+      tags:
+        - Administrator
+      summary: Acces to all orders
+      description: Brings a list with all orders registered in databaSE. 
+      parameters:
+        - in: header
+          name: Authorization
+          description: gIVEN TOKEN WHEN LOGIN FRON aDMIN ACCOUNT WAS MADE.
+          required: true
+          schema:
+            type: string
+            example: aaSSDdFr4567
+      responses:
+        '200':
+          description: orders list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminOrder'
+        '401':
+          description: Please login first
+        '403':
+          description: Access denied, only admin
+  /pedidos/{id}:
+    patch:
+      tags:
+        - Administrator
+      summary: Updates the state of a order.
+      description: WIth ID of order given and a new state, database registry is updated. 
+      parameters:
+        - name: id
+          in: path
+          description: ID of order to be updated
+          required: true
+          schema: 
+            type: integer
+            example: 1
+        - in: header
+          name: Authorization
+          description: Token given when Admin Login was made.
+          required: true
+          schema:
+            type: string
+            example: aaSSDdFr4567
+      responses:
+        '200':
+            description: State of order was modified
+        '401':
+            description: Plase login first
+        '403':
+            description: Access denied. Only admin
+      requestBody: 
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrder'
+        description: New state of order
+    
+components:
+  schemas:
+    PostUser:
+      type: object
+      properties:
+        username:
+          type: string
+          example: john1994
+        password:
+          type: string
+          example: "pass234"
+        name:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Watson
+        email:
+          type: string
+          example: john@watson.com
+        phone:
+          type: string
+          example: "911123456"
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: john1994
+        name:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Watson
+        mail:
+          type: string
+          example: john@watson.com
+        phone:
+          type: string
+          example: "911123456"
+        admin:
+          type: integer
+          example: 0
+    UserLogin:
+      type: object
+      properties:
+        username:
+          type: string
+          example: john1994
+        password:
+          type: string
+          example: "pass234"
+    Product:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Hamburguer
+        price:
+          type: integer
+          example: 400
+    UpdateProduct:
+      type: object
+      properties:
+        new_name:
+          type: string
+          example: Classic Hamburguer
+        new_price:
+          type: integer
+          example: 450
+    OrderUser:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            type: integer
+          example: [1,3,5]
+        quantities:
+          type: array
+          items: 
+            type: integer
+          example: [1,1,2]
+        adress:
+          type: string
+          example: 5th Avenue 235
+        payment_method:
+          type: string
+          example: "Cash"
+    AdminOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        estado:
+          type: string
+          default: "New"
+          example: "Being made"
+        usuario_id:
+          type: integer
+          example: 4
+        direccion:
+          type: string
+          example: 5th Avenue 245
+        total:
+          type: integer
+          example: 2500
+        metodo_pago:
+          type: string
+          example: Credit Card
+        hora:
+          type: string
+          example: "2020-03-25T00:48:08.000Z"
+        nombre_producto:
+          type: string
+          example: Hamburguer
+        cantidad:
+          type: integer
+          example: 3
+    UpdateOrder:
+      type: object
+      properties:
+        new_state:
+          type: string
+          example: "Canceled"
+    FieldsRequired:
+      type: string
+      example: "There nare required field ampty"
+    UserNotAvailable:
+      type: string
+      example: "Username not available"
+    NoUser:  
+      type: string
+      example: "Non-existent user"
+    NoPassword:
+      type: string
+      example: "Wrong Password"
+    NoAutentification:
+      type: string
+      example: "There was an error authentifying"
+    ChangesOK:
+      type: string
+      example: "Changes have been made"
+    NewName:
+      type: string
+      example: "The name of the product has been updated"
+    NewPrice:
+      type: string
+      example: "The price of the product has been updated"

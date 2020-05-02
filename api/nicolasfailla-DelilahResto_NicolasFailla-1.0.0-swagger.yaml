@@ -1,0 +1,177 @@
+openapi: 3.0.0
+info:
+  version: "1.0.0"
+  title: 'DelilahResto'
+  description: 'API for DelilahResto - A E-commerce of Food & Deliver Web App'
+paths: {}
+# Added by API Auto Mocking Plugin
+servers:
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/nicolasfailla/DelilahResto_NicolasFailla/1
+    
+schemes:
+- http
+
+paths:
+  /post:
+      description: Permite crear usuarios en la base de datos.
+      parameters:
+        - name: usuario
+          in: query
+          description: Crear un usuario nuevo en la base de datos.
+          schema:
+            type: object
+            properties:
+              user:
+                type: string
+                description: user name
+                example: ‘danisegovia’
+              pass:
+                type: string
+                description: Password
+                example: ‘bocas007’
+              email:
+                type: string
+                description: email
+                example: 'example@gmail.com’
+              firstNameLastName:
+                type: string
+                description: nombre del usuario
+                example: "Daniel Segovia"
+              lastName:
+                type: string
+                description: apellido
+                example: ‘Segovia’
+              adress:
+                type: string
+                description: adress of user
+                example: "av. santa fe 2345"
+              country:
+                type: string
+                description: pais del usuario
+                example: "Argentina"
+              phoneNumber:
+                type: int
+                description: numero del empleado
+                example: 00541150213472
+              admin:
+                type: boolean
+                description: is user an admin?
+                example: true
+      responses:
+        200:
+          description: Successfull Request
+          content:
+            application/json:
+              schema:
+                type: string
+                example: {“Message”: “Ok”}
+            application/xml:
+              schema:
+                type: string
+                example: “Ok”
+            text/plain:
+              schema:
+                type: string
+                example: Ok
+  
+  /usuarios/{id}:
+    get:
+      description: Obtener información de un empleado ingresando su ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Codigo del empeado
+          schema:
+            type: number
+            example: 456
+      responses:
+        200:
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    id:
+                      type: integer
+                      example: 456
+                    nombre:
+                      type: string
+                      example: Daniel Segovia
+                    sueldo:
+                      type: number
+                      format: float
+                      example: 20000    post:
+      description: Permite crear usuarios en la base de datos.
+      parameters:
+        - name: employee
+          in: query
+          description: Crear un empleado nuevo en la base de datos.
+          schema:
+            type: object
+            properties:
+              nombre:
+                type: string
+                description: Primer nombre
+                example: ‘Daniel’
+              apellido:
+                type: string
+                description: Apellido
+                example: ‘Segovia’
+              id:
+                type: number
+                description: ID del empleado
+                example: 456
+              email:
+                type: string
+                description: Correo electronico del empleado
+                example: "example@gmail.com"
+      responses:
+        200:
+          description: Successfull Request
+          content:
+            application/json:
+              schema:
+                type: string
+                example: {“Message”: “Ok”}
+            application/xml:
+              schema:
+                type: string
+                example: “Ok”
+            text/plain:
+              schema:
+                type: string
+                example: Ok
+  /employees/{id}:
+    get:
+      description: Obtener información de un empleado ingresando su ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: Codigo del empeado
+          schema:
+            type: number
+            example: 456
+      responses:
+        200:
+          description: Successful request
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    id:
+                      type: integer
+                      example: 456
+                    nombre:
+                      type: string
+                      example: Daniel Segovia
+                    sueldo:
+                      type: number
+                      format: float
+                      example: 20000
