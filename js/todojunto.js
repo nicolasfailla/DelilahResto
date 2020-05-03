@@ -1,280 +1,292 @@
+// --- LIBRARIES ---
+
 const express = require("express");
+
 const app = express();
 
-//librería para encriptar y validar contraseñas
 const hashing = require("password-hash");
 
 const mysql = require("mysql2");
 
 const Sequelize = require("sequelize");
 
-//Para conectar con la base de datos
-const sequelize = new Sequelize("mysql://root:@localhost:3306/delilah");
+const sequelize = new Sequelize("mysql://root:@localhost:3306/delilah_resto");
 
 const jwt = require("jsonwebtoken");
 
-//Contraseña para firmar los tokens
-const passwordJwt = "MafcxI9nlw";
+const passwordJwt = "LegvlaC2paqHbn";
 
 app.use(express.json());
 
-//Validar usuario y contraseña, guarda en el token si el usuario es admin o no
-function validarUsuario(req, res, next) {
-  let nombreusuario = req.body.nombreusuario;
+// --- USER AND PASS AUTHORIZATION. SAVES IN TOKEN IF USER IS ADMIN OR NOT ---
+
+function userValidation(req, res, next) {
+  let username = req.body.username;
   let password = req.body.password;
-  if (typeof nombreusuario != undefined && typeof password != undefined) {
+  if (typeof username != undefined && typeof password != undefined) {
     sequelize
-      .query("SELECT * FROM usuarios WHERE nombre_usuario= ?", {
-        replacements: [nombreusuario],
+      .query("SELECT * FROM users WHERE username= ?", {
+        replacements: [username],
         type: sequelize.QueryTypes.SELECT
       })
-      .then(resultados => {
-        let usuario = resultados[0];
-        if (usuario == undefined) {
-          res.status(400).json("Usuario inexistente");
+      .then(result => {
+        let user = result[0];
+        if (user == undefined) {
+          res.status(400).json("Non-existent user");
         } else {
-          if (hashing.verify(password, usuario.password)) {
-            usuario_token = {
-              id_usuario: usuario.id,
-              nombreusuario: nombreusuario,
-              admin: usuario.admin
+          if (hashing.verify(password, user.password)) {
+            user_token = {
+              id_user: user.id,
+              username: username,
+              admin: user.admin
             };
-            const token = jwt.sign({ usuario_token }, passwordJwt);
+            const token = jwt.sign({ user_token }, passwordJwt);
             req.locals = token;
             return next();
           } else {
-            res.status(400).json("Contraseña incorrecta");
+            res.status(400).json("Wrong password");
           }
         }
       })
       .catch(err => {
-        res.status(400).json("Ha ocurrido un error autenticando");
+        res.status(400).json("An error has occurred during authentification");
       });
   }
 }
 
-//Dado un token, se fija si corresponde a un admin o no
-function validarAdmin(req, res, next) {
+// -- WITH GIVEN TOKEN, CHECKS IF ITS ADMIN OR NOT ---
+function adminValidation(req, res, next) {
   const token = req.headers.authorization;
   if (!token) {
-    res.status(401).json("Primero debes iniciar sesión");
+    res.status(401).json("Please login first");
   } else {
-    const verificado = jwt.verify(token, passwordJwt);
-    let usuario = verificado.usuario_token;
-    if (usuario.admin == 1) {
+    const verified = jwt.verify(token, passwordJwt);
+    let user = verified.user_token;
+    if (user.admin == 1) {
       return next();
     } else {
-      res.status(403).json("Acceso denegado. Sólo administradores");
+      res.status(403).json("Acces denied. Only Admin");
     }
   }
 }
 
-//Chequea que se haya iniciado sesión para poder interactuar
-function darAcceso(req, res, next) {
+// --- VALIDATES THAT LOG IN HAS BEEN MADE --- 
+
+function giveAcces(req, res, next) {
   const token = req.headers.authorization;
   if (!token) {
-    res.status(401).json("Primero debes iniciar sesión");
+    res.status(401).json("Please log in first");
   } else {
-    const verificado = jwt.verify(token, passwordJwt);
-    let usuario = verificado.usuario_token;
-    if (usuario != undefined) {
-      req.locals = usuario;
+    const verified = jwt.verify(token, passwordJwt);
+    let user = verified.user_token;
+    if (user != undefined) {
+      req.locals = user;
       return next();
     } else {
-      res.status(403).json("Token inválido");
+      res.status(403).json("Invalid token");
     }
   }
 }
 
-//Calcula el total de un pedido realizado
-async function calcularPrecioTotal(req, res, next) {
-  let productos = req.body.productos;
-  let cantidades = req.body.cantidades;
+// --- CALCULATES THE TOTAL COST OF AN ORDER ---
+
+async function totalCostCalculation(req, res, next) {
+  let products = req.body.products;
+  let quantities = req.body.quantity;
   let total = 0;
   for (var i = 0; i < productos.length; i++) {
-    let cantidad = cantidades[i];
+    let quantity = quantities[i];
     await sequelize
-      .query("SELECT precio FROM productos WHERE id = ?", {
-        replacements: [productos[i]],
+      .query("SELECT precio FROM products WHERE id = ?", {
+        replacements: [products[i]],
         type: sequelize.QueryTypes.SELECT
       })
       .then(resultados => {
-        let precio = resultados[0].precio;
-        total = total + precio * cantidad;
+        let price = resultados[0].price;
+        total = total + price * quantity;
       })
-      .catch(error => res.status(400).json("Algo salió mal"));
+      .catch(error => res.status(400).json("Something went wrong"));
   }
   res.locals = total;
   return next();
 }
 
-//Endpoint para crear usuario, acceso libre
-app.post("/usuarios", (req, res) => {
-  nombreusuario = req.body.nombreusuario;
+// --- CREATING NEW USERS. FREE ACCES
+
+app.post("/users", (req, res) => {
+  username = req.body.username;
   password = req.body.password;
-  passwordEncriptada = hashing.generate(password);
-  nombre = req.body.nombre;
-  apellido = req.body.apellido;
+  encryptedPassword = hashing.generate(password);
+  name = req.body.name;
+  last_name = req.body.last_name;
   email = req.body.email;
-  telefono = req.body.telefono;
+  phone = req.body.phone;
 
   if (
-    !nombreusuario ||
+    !username ||
     !password ||
-    !nombre ||
-    !apellido ||
+    !name ||
+    !lastname ||
     !email ||
-    !telefono
+    !phone
   ) {
-    res.status(400).json("Hay campos obligatorios vacíos");
+    res.status(400).json("There are required field empty");
   } else {
     sequelize
-      .query("SELECT id FROM usuarios WHERE nombre_usuario=?", {
-        replacements: [nombreusuario],
+      .query("SELECT id FROM users WHERE username=?", {
+        replacements: [username],
         type: sequelize.QueryTypes.SELECT
       })
-      .then(resultados => {
-        if (resultados.length == 0) {
+      .then(results => {
+        if (results.length == 0) {
           sequelize
             .query(
-              "INSERT INTO usuarios (nombre_usuario, password, nombre, apellido, mail, telefono,admin) VALUES (?,?,?,?,?,?,?)",
+              "INSERT INTO users (username, password, name, last_name, mail, phone, admin) VALUES (?,?,?,?,?,?,?)",
               {
                 replacements: [
-                  nombreusuario,
-                  passwordEncriptada,
-                  nombre,
-                  apellido,
+                  username,
+                  encryptedPassword,
+                  name,
+                  last_name,
                   email,
-                  telefono,
+                  phone,
                   0
                 ]
               }
             )
             .then(resultados => {
-              res.status(201).json("El usuario ha sido creado con éxito");
+              res.status(201).json("User has benn succesfully created");
             });
         } else {
-          res.status(400).json("El nombre de usuario no está disponible");
+          res.status(400).json("Username not available");
         }
       });
   }
 });
 
-//Trae todos los usuarios, sólo administrador
-app.get("/usuarios", validarAdmin, (req, res) => {
+// --- GETS ALL USERS. ONLY ADMIN ---
+
+app.get("/users", adminValidation, (req, res) => {
   sequelize
-    .query("SELECT nombre_usuario, nombre, apellido, mail, telefono,admin FROM usuarios", { type: sequelize.QueryTypes.SELECT })
-    .then(resultados => {
-      res.status(200).json(resultados);
+    .query("SELECT username, name, last_name, mail, phone, admin FROM users", { type: sequelize.QueryTypes.SELECT })
+    .then(results => {
+      res.status(200).json(results);
     });
 });
 
 
 
-//Endpoint para iniciar sesión, acceso libre
-app.post("/login", validarUsuario, (req, res) => {
+// --- LOG IN. FREE ACCES ---
+app.post("/login", userValidation, (req, res) => {
   const token = req.locals;
   res.status(200).json({"token": token});
 });
 
-//Endpoint para crear productos, sólo administrador
-app.post("/productos", validarAdmin, (req, res) => {
-  nombre = req.body.nombre;
-  precio = req.body.precio;
+// --- CREATES PRODUCT. ONLY ADMIN ---
+
+app.post("/products", adminValidation, (req, res) => {
+  name = req.body.name;
+  price = req.body.price;
 
   sequelize
-    .query("INSERT INTO productos (nombre, precio) VALUES (?,?)", {
-      replacements: [nombre, precio]
+    .query("INSERT INTO products (name, price) VALUES (?,?)", {
+      replacements: [name, price]
     })
     .then(resultados => {
       res
         .status(201)
-        .json("Se ha agregado el nuevo producto a la base de datos");
+        .json("New product added to database");
     });
 });
 
-//Endpoint para eliminar productos, sólo administrador
-app.delete("/productos/:id", validarAdmin, (req, res) => {
-  const producto_id = req.params.id;
+// DELETES PRODUCTS. ONLY FOR ADMIN ---
+
+app.delete("/products/:id", adminValidation, (req, res) => {
+  const product_id = req.params.id;
   sequelize
-    .query("DELETE FROM productos WHERE id = ?", {
-      replacements: [producto_id]
+    .query("DELETE FROM products WHERE id = ?", {
+      replacements: [product_id]
     })
     .then(resultados => {
-      res.status(200).json("Se ha eliminado el producto");
+      res.status(200).json("Product deleted");
     });
 });
 
-//Endpoint para editar productos, sólo administrador
-app.patch("/productos/:id", validarAdmin, (req, res) => {
-  let id_producto = req.params.id;
-  let nuevo_nombre = req.body.nuevo_nombre;
-  let nuevo_precio = req.body.nuevo_precio;
-  if (nuevo_nombre != undefined && nuevo_precio != undefined) {
+// EDIT PRODUCT. ONLY ADMIN
+
+app.patch("/products/:id", adminValidation, (req, res) => {
+  let id_product = req.params.id;
+  let new_name = req.body.new_name;
+  let new_price = req.body.new_price;
+  if (new_name != undefined && new_price != undefined) {
     sequelize
-      .query("UPDATE productos SET nombre = ?, precio = ? WHERE id = ?", {
-        replacements: [nuevo_nombre, nuevo_precio, id_producto]
+      .query("UPDATE products SET name = ?, price = ? WHERE id = ?", {
+        replacements: [new_name, new_price, id_product]
       })
       .then(resultados => {
-        res.status(200).json("Se realizaron los cambios");
+        res.status(200).json("Changes has been made");
       });
-  } else if (nuevo_nombre != undefined) {
+  } else if (new_name != undefined) {
     sequelize
-      .query("UPDATE productos SET nombre = ? WHERE id = ?", {
-        replacements: [nuevo_nombre, id_producto]
+      .query("UPDATE products SET name = ? WHERE id = ?", {
+        replacements: [new_name, id_product]
       })
       .then(resultados => {
-        res.status(200).json("El nombre del producto ha sido actualizado");
+        res.status(200).json("The name of the products has been updated");
       });
-  } else if (nuevo_precio != undefined) {
+  } else if (new_price != undefined) {
     sequelize
-      .query("UPDATE productos SET precio = ? WHERE id = ?", {
-        replacements: [nuevo_precio, id_producto]
+      .query("UPDATE products SET price = ? WHERE id = ?", {
+        replacements: [new_price, id_product]
       })
       .then(resultados => {
-        res.status(200).json("El precio del producto ha sido actualizado");
+        res.status(200).json("The price of the product has been updated");
       });
   }
 });
 
-//Endpoint para consultar todos los productos disponibles, sólo usuarios autenticados y admin
-app.get("/productos", darAcceso, (req, res) => {
+// --- GETS ALL AVAILABLE PRODUCTS. ONLY ADMIN AND AUTHENTIFIED USERS ---
+
+app.get("/products", giveAcces, (req, res) => {
   sequelize
-    .query("SELECT * FROM productos", { type: sequelize.QueryTypes.SELECT })
-    .then(resultados => {
-      res.status(200).json(resultados);
+    .query("SELECT * FROM products", { type: sequelize.QueryTypes.SELECT })
+    .then(results => {
+      res.status(200).json(results);
     });
 });
 
-//Endpoint para realizar un nuevo pedido, usuarios autenticados
-app.post("/pedidos", darAcceso, calcularPrecioTotal, (req, res) => {
-  let usuario_id = req.locals.id_usuario;
-  let direccion = req.body.direccion;
+// --- MAKES NEW ORDER. ONLY AUTHENTIFIED USERS ---
+
+app.post("/orders", giveAcces, totalCostCalculation, (req, res) => {
+  let user_id = req.locals.user_id;
+  let adress = req.body.adress;
   let total = res.locals;
-  let metodo_pago = req.body.metodo_pago;
-  let productos = req.body.productos;
-  let cantidades = req.body.cantidades;
+  let payment_method = req.body.payment_method;
+  let products = req.body.products;
+  let quantities = req.body.quantities;
 
   sequelize
     .query(
-      "INSERT INTO pedidos (usuario_id, direccion, total, metodo_pago) VALUES (?,?,?,?)",
+      "INSERT INTO orders (user_id, adress, total, payment_method) VALUES (?,?,?,?)",
       {
-        replacements: [usuario_id, direccion, total, metodo_pago]
+        replacements: [user_id, adress, total, payment_method]
       }
     )
     .then(resultados => {
-      //Este query es para saber el id que va a tener este nuevo pedido
+
+      // QUERY FOR GIVING THE ID OF THE NEW ORDER
+
       sequelize
-        .query("SELECT id FROM pedidos ORDER BY id DESC LIMIT 1", {
+        .query("SELECT id FROM orders ORDER BY id DESC LIMIT 1", {
           type: sequelize.QueryTypes.SELECT
         })
-        .then(resultados => {
-          let pedido_id = resultados[0].id;
-          for (var i = 0; i < productos.length; i++) {
-            let producto = productos[i];
-            let cantidad = cantidades[i];
+        .then(results => {
+          let order_id = results[0].id;
+          for (var i = 0; i < products.length; i++) {
+            let product = products[i];
+            let quantity = quantities[i];
             sequelize.query(
-              "INSERT INTO pedidos_productos (pedido_id, producto_id, cantidad) VALUES (?,?,?)",
+              "INSERT INTO orders_products (pedido_id, producto_id, cantidad) VALUES (?,?,?)",
               {
                 replacements: [pedido_id, producto, cantidad]
               }

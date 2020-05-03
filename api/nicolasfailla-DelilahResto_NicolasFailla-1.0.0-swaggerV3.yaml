@@ -404,29 +404,29 @@ components:
         id:
           type: integer
           example: 1
-        estado:
+        state:
           type: string
           default: "New"
           example: "Being made"
-        usuario_id:
+        user_id:
           type: integer
           example: 4
-        direccion:
+        adress:
           type: string
           example: 5th Avenue 245
         total:
           type: integer
           example: 2500
-        metodo_pago:
+        payment_method:
           type: string
           example: Credit Card
-        hora:
+        time:
           type: string
           example: "2020-03-25T00:48:08.000Z"
-        nombre_producto:
+        product_name:
           type: string
           example: Hamburguer
-        cantidad:
+        quantity:
           type: integer
           example: 3
     UpdateOrder:
@@ -437,7 +437,7 @@ components:
           example: "Canceled"
     FieldsRequired:
       type: string
-      example: "There nare required field ampty"
+      example: "There are required field empty"
     UserNotAvailable:
       type: string
       example: "Username not available"

@@ -1,0 +1,33 @@
+DROP DATABASE delilah_resto;
+CREATE DATABASE delilah_resto;
+CREATE TABLE delilah_resto.users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(60) NOT NULL,
+    password VARCHAR(60) NOT NULL,
+    name VARCHAR(60) NOT NULL,
+    last_name VARCHAR(60),
+    mail VARCHAR(60) NOT NULL,
+    phone VARCHAR(60) NOT NULL,
+    admin INT NOT NULL
+    );
+CREATE TABLE delilah_resto.orders (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    state VARCHAR(60) NOT NULL DEFAULT "new",
+    user_id INT NOT NULL,
+    adress VARCHAR(60) NOT NULL,
+    total INT,
+    payment_method VARCHAR(60) NOT NULL,
+    time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+CREATE TABLE delilah_resto.products (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(60) NOT NULL,
+    price INT NOT NULL
+);
+CREATE TABLE delilah_resto.orders_products (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    order_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL
+    );
+INSERT INTO delilah_resto.users (username, password, name, last_name, mail, phone, admin) VALUES ("delilahAdmin", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c3VhcmlvX3Rva2VuIjp7ImlkX3VzdWFyaW8iOjEsIm5vbWJyZXVzdWFyaW8iOiJkZWxpbGFoQWRtaW4iLCJhZG1pbiI6MX0sImlhdCI6MTU4ODQ2MTIxMn0.V8s8asHNhb7MF_XfMNshrPIIwMOBUJ8PbF7no0eu-AI", "Admin", "Delilah", "admin@delilahresto.com", "541134567123", 1)
