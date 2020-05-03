@@ -1,89 +1,139 @@
-//Validar usuario y contraseña, guarda en el token si el usuario es admin o no
-function validarUsuario(req, res, next) {
-    let nombreusuario = req.body.nombreusuario;
-    let password = req.body.password;
-    if (typeof nombreusuario != undefined && typeof password != undefined) {
-      sequelize
-        .query("SELECT * FROM usuarios WHERE nombre_usuario= ?", {
-          replacements: [nombreusuario],
-          type: sequelize.QueryTypes.SELECT
-        })
-        .then(resultados => {
-          let usuario = resultados[0];
-          if (usuario == undefined) {
-            res.status(400).json("Usuario inexistente");
+// --- DELILAH RESTO: A DELIVERY FOOD API. FUNCTIONS ---
+
+// --- LIBRARIES ---
+
+const express = require("express");
+
+const app = express();
+
+const hashing = require("password-hash");
+
+const mysql = require("mysql2");
+
+const Sequelize = require("sequelize");
+
+const sequelize = new Sequelize("mysql://root:@localhost:3306/delilah_resto");
+
+const jwt = require("jsonwebtoken");
+
+const passwordJwt = "Leg5C2qbn";
+
+const endpoints = require('./endpoints.js');
+
+app.use(express.json());
+
+// --- USER AND PASS AUTHORIZATION. SAVES IN TOKEN IF USER IS ADMIN OR NOT ---
+
+const userValidation = async (req, res, next) => {
+  let username = req.body.username;
+  let password = req.body.password;
+  if (typeof username != undefined && typeof password != undefined) {
+    sequelize
+      .query("SELECT * FROM users WHERE username= ?", {
+        replacements: [username],
+        type: sequelize.QueryTypes.SELECT
+      })
+      .then(result => {
+        let user = result[0];
+        if (user == undefined) {
+          res.status(400).json("Non-existent user");
+        } else {
+          if (hashing.verify(password, user.password)) {
+            user_token = {
+              id_user: user.id,
+              username: username,
+              admin: user.admin
+            };
+            const token = jwt.sign({ user_token }, passwordJwt);
+            req.locals = token;
+            return next();
           } else {
-            if (hashing.verify(password, usuario.password)) {
-              usuario_token = {
-                id_usuario: usuario.id,
-                nombreusuario: nombreusuario,
-                admin: usuario.admin
-              };
-              const token = jwt.sign({ usuario_token }, passwordJwt);
-              req.locals = token;
-              return next();
-            } else {
-              res.status(400).json("Contraseña incorrecta");
-            }
+            res.status(400).json("Wrong password");
           }
-        })
-        .catch(err => {
-          res.status(400).json("Ha ocurrido un error autenticando");
-        });
-    }
+        }
+      })
+      .catch(err => {
+        res.status(400).json("An error has occurred during authentification");
+      });
   }
-  
-  //Dado un token, se fija si corresponde a un admin o no
-  function validarAdmin(req, res, next) {
-    const token = req.headers.authorization;
-    if (!token) {
-      res.status(401).json("Primero debes iniciar sesión");
+}
+
+
+
+
+
+// -- WITH GIVEN TOKEN, CHECKS IF ITS ADMIN OR NOT ---
+
+
+const adminValidation = async (req, res, next) => {
+  const token = req.headers.authorization;
+  if (!token) {
+    res.status(401).json("Please login first");
+  } else {
+    const verified = jwt.verify(token, passwordJwt);
+    let user = verified.user_token;
+    if (user.admin == 1) {
+      return next();
     } else {
-      const verificado = jwt.verify(token, passwordJwt);
-      let usuario = verificado.usuario_token;
-      if (usuario.admin == 1) {
-        return next();
-      } else {
-        res.status(403).json("Acceso denegado. Sólo administradores");
-      }
+      res.status(403).json("Acces denied. Only Admin");
     }
   }
-  
-  //Chequea que se haya iniciado sesión para poder interactuar
-  function darAcceso(req, res, next) {
-    const token = req.headers.authorization;
-    if (!token) {
-      res.status(401).json("Primero debes iniciar sesión");
+};
+
+
+/*
+// --- VALIDATES THAT LOG IN HAS BEEN MADE --- 
+
+function giveAcces(req, res, next) {
+  const token = req.headers.authorization;
+  if (!token) {
+    res.status(401).json("Please log in first");
+  } else {
+    const verified = jwt.verify(token, passwordJwt);
+    let user = verified.user_token;
+    if (user != undefined) {
+      req.locals = user;
+      return next();
     } else {
-      const verificado = jwt.verify(token, passwordJwt);
-      let usuario = verificado.usuario_token;
-      if (usuario != undefined) {
-        req.locals = usuario;
-        return next();
-      } else {
-        res.status(403).json("Token inválido");
-      }
+      res.status(403).json("Invalid token");
     }
   }
+}
+
+// --- CALCULATES THE TOTAL COST OF AN ORDER ---
+
+async function totalCostCalculation(req, res, next) {
+  let products = req.body.products;
+  let quantities = req.body.quantities;
+  let total = 0;
+  for (var i = 0; i < products.length; i++) {
+    let quantity = quantities[i];
+    await sequelize
+      .query("SELECT price FROM products WHERE id = ?", {
+        replacements: [products[i]],
+        type: sequelize.QueryTypes.SELECT
+      })
+      .then(results => {
+        let price = results[0].price;
+        total = total + price * quantity;
+      })
+      .catch(error => res.status(400).json("Something went wrong"));
+  }
+  res.locals = total;
+  return next();
+}
+
+*/
+
+module.exports = {
   
-  //Calcula el total de un pedido realizado
-  async function calcularPrecioTotal(req, res, next) {
-    let productos = req.body.productos;
-    let cantidades = req.body.cantidades;
-    let total = 0;
-    for (var i = 0; i < productos.length; i++) {
-      let cantidad = cantidades[i];
-      await sequelize
-        .query("SELECT precio FROM productos WHERE id = ?", {
-          replacements: [productos[i]],
-          type: sequelize.QueryTypes.SELECT
-        })
-        .then(resultados => {
-          let precio = resultados[0].precio;
-          total = total + precio * cantidad;
-        })
-        .catch(error => res.status(400).json("Algo salió mal"));
-    }
-    res.locals = total;
-    return next();
-  }
+  adminValidation: adminValidation,
+  userValidation: userValidation,
+  /*
+  giveAcces: giveAcces,
+  totalCostCalculation: totalCostCalculation
+  */
+};
+
+
+

@@ -98,7 +98,7 @@ async function totalCostCalculation(req, res, next) {
   for (var i = 0; i < products.length; i++) {
     let quantity = quantities[i];
     await sequelize
-      .query("SELECT precio FROM products WHERE id = ?", {
+      .query("SELECT price FROM products WHERE id = ?", {
         replacements: [products[i]],
         type: sequelize.QueryTypes.SELECT
       })
