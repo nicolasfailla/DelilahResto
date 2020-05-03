@@ -14,7 +14,7 @@ const sequelize = new Sequelize("mysql://root:@localhost:3306/delilah_resto");
 
 const jwt = require("jsonwebtoken");
 
-const passwordJwt = "LegvlaC2paqHbn";
+const passwordJwt = "Leg5C2qbn";
 
 app.use(express.json());
 
@@ -55,6 +55,7 @@ function userValidation(req, res, next) {
 }
 
 // -- WITH GIVEN TOKEN, CHECKS IF ITS ADMIN OR NOT ---
+
 function adminValidation(req, res, next) {
   const token = req.headers.authorization;
   if (!token) {
@@ -92,17 +93,17 @@ function giveAcces(req, res, next) {
 
 async function totalCostCalculation(req, res, next) {
   let products = req.body.products;
-  let quantities = req.body.quantity;
+  let quantities = req.body.quantities;
   let total = 0;
-  for (var i = 0; i < productos.length; i++) {
+  for (var i = 0; i < products.length; i++) {
     let quantity = quantities[i];
     await sequelize
       .query("SELECT precio FROM products WHERE id = ?", {
         replacements: [products[i]],
         type: sequelize.QueryTypes.SELECT
       })
-      .then(resultados => {
-        let price = resultados[0].price;
+      .then(results => {
+        let price = results[0].price;
         total = total + price * quantity;
       })
       .catch(error => res.status(400).json("Something went wrong"));
@@ -126,7 +127,7 @@ app.post("/users", (req, res) => {
     !username ||
     !password ||
     !name ||
-    !lastname ||
+    !last_name ||
     !email ||
     !phone
   ) {
@@ -177,6 +178,7 @@ app.get("/users", adminValidation, (req, res) => {
 
 
 // --- LOG IN. FREE ACCES ---
+
 app.post("/login", userValidation, (req, res) => {
   const token = req.locals;
   res.status(200).json({"token": token});
@@ -199,7 +201,7 @@ app.post("/products", adminValidation, (req, res) => {
     });
 });
 
-// DELETES PRODUCTS. ONLY FOR ADMIN ---
+// DELETES PRODUCTS. ONLY ADMIN ---
 
 app.delete("/products/:id", adminValidation, (req, res) => {
   const product_id = req.params.id;
@@ -212,7 +214,7 @@ app.delete("/products/:id", adminValidation, (req, res) => {
     });
 });
 
-// EDIT PRODUCT. ONLY ADMIN
+// --- EDIT PRODUCT. ONLY ADMIN ---
 
 app.patch("/products/:id", adminValidation, (req, res) => {
   let id_product = req.params.id;
@@ -258,7 +260,7 @@ app.get("/products", giveAcces, (req, res) => {
 // --- MAKES NEW ORDER. ONLY AUTHENTIFIED USERS ---
 
 app.post("/orders", giveAcces, totalCostCalculation, (req, res) => {
-  let user_id = req.locals.user_id;
+  let user_id = req.locals.id_user;
   let adress = req.body.adress;
   let total = res.locals;
   let payment_method = req.body.payment_method;
@@ -286,42 +288,46 @@ app.post("/orders", giveAcces, totalCostCalculation, (req, res) => {
             let product = products[i];
             let quantity = quantities[i];
             sequelize.query(
-              "INSERT INTO orders_products (pedido_id, producto_id, cantidad) VALUES (?,?,?)",
+              "INSERT INTO orders_products (order_id, product_id, quantity) VALUES (?,?,?)",
               {
-                replacements: [pedido_id, producto, cantidad]
+                replacements: [order_id, product, quantity]
               }
             );
           }
-          res.status(200).json("El pedido fue realizado con éxito");
+          res.status(200).json("New order was made succesfully");
         });
     });
 });
 
-//Trae todos los pedidos, sólo administrador
-app.get("/pedidos", validarAdmin, (req, res) => {
+// --- GETS ALL ORDERS. ONLY ADMIN ---
+
+app.get("/orders", adminValidation, (req, res) => {
   sequelize
     .query(
-      "SELECT pedidos.*, productos.nombre AS nombre_producto, pedidos_productos.cantidad FROM pedidos JOIN pedidos_productos ON pedidos_productos.pedido_id = pedidos.id JOIN productos ON pedidos_productos.producto_id = productos.id",
+      "SELECT orders.*, products.name AS name_product, orders_products.quantity FROM orders JOIN orders_products ON orders_products.order_id = orders.id JOIN products ON orders_products.product_id = products.id",
       { type: sequelize.QueryTypes.SELECT }
     )
-    .then(resultados => {
-      res.status(200).json(resultados);
+    .then(results => {
+      res.status(200).json(results);
     });
 });
 
-//Endpoint para actualizar el estado de un pedido, sólo administradores
-app.patch("/pedidos/:id", validarAdmin, (req, res) => {
-  let id_pedido = req.params.id;
-  let nuevo_estado = req.body.nuevo_estado;
+// --- UPDATES STATES OF A PRODUCT. ONLY ADMIN ---
+
+app.patch("/orders/:id", adminValidation, (req, res) => {
+  let order_id = req.params.id;
+  let new_state = req.body.new_state;
   sequelize
-    .query("UPDATE pedidos SET estado = ? WHERE id = ?", {
-      replacements: [nuevo_estado, id_pedido]
+    .query("UPDATE orders SET state = ? WHERE id = ?", {
+      replacements: [new_state, order_id]
     })
     .then(resultados => {
-      res.status(200).json("El estado del pedido fue modificado");
+      res.status(200).json("Order state was updated");
     });
 });
 
+// --- SERVER LISTEN ---
+
 app.listen(3000, function() {
-  console.log("Servidor iniciado en puerto 3306...");
+  console.log("Server initiated on port 3306...");
 });

@@ -7,3 +7,5 @@ Install npm i nodemon
 
 
 OR RUN "npm install"
+
+for path, add /number (example: /1) to the endpoint
