@@ -30,6 +30,8 @@ password: pass1234
 USER: delilahUser
 username: user1234
 
-6. Run "node /index.js" in your terminal. Please remember to locate the path of the "js" folder first. Matching the "login" endpoint (or creating a new user) will give you the Token necessary to interact with the API (check Documentation). 
+6. In "js/index.js", "js/endpoints.js" and "js/functions.js", in line 15, you will have "const sequelize = new Sequelize("mysql://root:@localhost:3306/delilah_resto");". Please check your local server url / port if you have to change anything.
+
+7. Run "node /index.js" in your terminal. Please remember to locate the path of the "js" folder first. Matching the "login" endpoint (or creating a new user) will give you the Token necessary to interact with the API (check Documentation). 
 
 # THANK YOU, HAVE FUN!
