@@ -23,7 +23,7 @@ const functions = require('./functions.js');
 app.use(express.json());
 
 
-// --- ENDPOINTS ---
+// --- ENDPOINTS USERS AND LOGIN ---
 
 app.post('/users', endpoints.createUser);
 
@@ -31,9 +31,23 @@ app.get("/users", functions.adminValidation, endpoints.getUsers);
 
 app.post("/login", functions.userValidation, endpoints.login);
 
+// --- ENDPOINTS PRODUCTS ---
+
 app.post("/products", functions.adminValidation, endpoints.createProduct);
 
+app.patch("/products/:id", functions.adminValidation, endpoints.updateProduct);
+
 app.delete("/products/:id", functions.adminValidation, endpoints.deleteProduct);
+
+app.get("/products", functions.giveAcces, endpoints.getProducts);
+
+// --- ENDPOINTS ORDERS ---
+
+app.post("/orders", functions.giveAcces, functions.totalCostCalculation, endpoints.createOrder);
+
+app.get("/orders", functions.adminValidation, endpoints.getOrders);
+
+app.patch("/orders/:id", functions.adminValidation, endpoints.updateOrder);
 
 // --- SERVER LISTEN ---
 

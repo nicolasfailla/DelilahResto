@@ -81,10 +81,10 @@ const adminValidation = async (req, res, next) => {
 };
 
 
-/*
+
 // --- VALIDATES THAT LOG IN HAS BEEN MADE --- 
 
-function giveAcces(req, res, next) {
+const giveAcces = async (req, res, next) => {
   const token = req.headers.authorization;
   if (!token) {
     res.status(401).json("Please log in first");
@@ -100,9 +100,11 @@ function giveAcces(req, res, next) {
   }
 }
 
+
+
 // --- CALCULATES THE TOTAL COST OF AN ORDER ---
 
-async function totalCostCalculation(req, res, next) {
+const totalCostCalculation = async (req, res, next) => {
   let products = req.body.products;
   let quantities = req.body.quantities;
   let total = 0;
@@ -123,16 +125,13 @@ async function totalCostCalculation(req, res, next) {
   return next();
 }
 
-*/
+// --- MODULE EXPORT ---
 
 module.exports = {
-  
   adminValidation: adminValidation,
   userValidation: userValidation,
-  /*
   giveAcces: giveAcces,
   totalCostCalculation: totalCostCalculation
-  */
 };
 
 

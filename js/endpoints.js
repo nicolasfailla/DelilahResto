@@ -124,11 +124,11 @@ const deleteProduct = async (req, res) => {
     });
 };
 
-/*
+
 
 // --- EDIT PRODUCT. ONLY ADMIN ---
 
-app.patch("/products/:id", adminValidation, (req, res) => {
+const updateProduct = async (req, res) => {
   let id_product = req.params.id;
   let new_name = req.body.new_name;
   let new_price = req.body.new_price;
@@ -157,21 +157,25 @@ app.patch("/products/:id", adminValidation, (req, res) => {
         res.status(200).json("The price of the product has been updated");
       });
   }
-});
+};
+
+
 
 // --- GETS ALL AVAILABLE PRODUCTS. ONLY ADMIN AND AUTHENTIFIED USERS ---
 
-app.get("/products", giveAcces, (req, res) => {
+const getProducts = async (req, res) => {
   sequelize
     .query("SELECT * FROM products", { type: sequelize.QueryTypes.SELECT })
     .then(results => {
       res.status(200).json(results);
     });
-});
+};
+
+
 
 // --- MAKES NEW ORDER. ONLY AUTHENTIFIED USERS ---
 
-app.post("/orders", giveAcces, totalCostCalculation, (req, res) => {
+const createOrder = async (req, res) => {
   let user_id = req.locals.id_user;
   let adress = req.body.adress;
   let total = res.locals;
@@ -209,11 +213,13 @@ app.post("/orders", giveAcces, totalCostCalculation, (req, res) => {
           res.status(200).json("New order was made succesfully");
         });
     });
-});
+};
+
+
 
 // --- GETS ALL ORDERS. ONLY ADMIN ---
 
-app.get("/orders", adminValidation, (req, res) => {
+const getOrders = async (req, res) => {
   sequelize
     .query(
       "SELECT orders.*, products.name AS name_product, orders_products.quantity FROM orders JOIN orders_products ON orders_products.order_id = orders.id JOIN products ON orders_products.product_id = products.id",
@@ -222,11 +228,11 @@ app.get("/orders", adminValidation, (req, res) => {
     .then(results => {
       res.status(200).json(results);
     });
-});
+};
 
 // --- UPDATES STATES OF A PRODUCT. ONLY ADMIN ---
 
-app.patch("/orders/:id", adminValidation, (req, res) => {
+const updateOrder = async (req, res) => {
   let order_id = req.params.id;
   let new_state = req.body.new_state;
   sequelize
@@ -236,16 +242,21 @@ app.patch("/orders/:id", adminValidation, (req, res) => {
     .then(resultados => {
       res.status(200).json("Order state was updated");
     });
-});
+};
 
-*/
+// --- MODULE EXPORT ---
 
 module.exports = {
   createUser: createUser,
   getUsers: getUsers,
   login: login,
   createProduct: createProduct,
-  deleteProduct: deleteProduct
+  deleteProduct: deleteProduct,
+  updateProduct: updateProduct,
+  getProducts: getProducts,
+  createOrder: createOrder,
+  getOrders: getOrders,
+  updateOrder: updateOrder
 };
 
 
